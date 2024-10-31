@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masa Rezervasyon Sistemi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo img {
+            width: 50%;
+            height: auto;
+        }
+        h2 {
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 8px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .seat-btn {
+            width: 80px;
+            height: 50px;
+            margin: 5px;
+            border: 1px solid #007bff;
+            background-color: #e7f1ff;
+            color: #007bff;
+            cursor: pointer;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+        }
+        .seat-btn.selected {
+            background-color: red;
+            color: white;
+        }
+        .seat-btn.disabled {
+            background-color: #ffcccc;
+            color: #aaa;
+            cursor: not-allowed;
+        }
+        .seat-btn.reserved {
+            background-color: red; /* Dolu koltukların arka plan rengi kırmızı */
+            color: white; /* Yazı rengi beyaz */
+            cursor: not-allowed; /* Tıklanamaz görünüm */
+        }
+        .seat-grid {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #f1f1f1;
+        }
+        .btn {
+            padding: 10px 20px;
+            font-size: 1em;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .reservation-list {
+            margin-top: 20px;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+        .download-btn {
+            background-color: #28a745;
+            color: white;
+            margin-top: 10px;
+        }
+        .download-btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="logo">
+        <a href="https://hizliresim.com/4oo441y"><img src="https://i.hizliresim.com/4oo441y.png" alt="Logo"></a>
+    </div>
+    
+    <h2>Masa Rezervasyon Sistemi</h2>
+    <form id="reservationForm" method="POST" action="javascript:void(0);">
+        <div class="form-group">
+            <label for="table">Masa/Toplantı Odası Seçin</label>
+            <select id="table" name="table" onchange="updateSeatingPlan()" required>
+                <option value="Masa 1">Masa 1</option>
+                <option value="Masa 2">Masa 2</option>
+                <option value="Toplantı Odası">Toplantı Odası</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="name">Adı</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="surname">Soyadı</label>
+            <input type="text" id="surname" name="surname" required>
+        </div>
+        <div class="form-group">
+            <label for="startDate">Başlangıç Tarihi</label>
+            <input type="date" id="startDate" name="startDate" required>
+        </div>
+        <div class="form-group">
+            <label for="endDate">Bitiş Tarihi</label>
+            <input type="date" id="endDate" name="endDate" required>
+        </div>
+        <div class="form-group">
+            <label>Oturma Düzeni</label>
+            <div id="seatPlan" class="seat-grid"></div>
+            <input type="hidden" id="selectedSeat" name="selectedSeat">
+        </div>
+        <button type="submit" class="btn" onclick="submitReservation()">Rezervasyon Yap</button>
+    </form>
+
+    <div class="reservation-list" id="reservationList">
+        <h3>Rezervasyon Kayıtları</h3>
+        <ul id="reservations"></ul>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
