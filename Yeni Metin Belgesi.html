@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masa Rezervasyon Sistemi</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo img {
+            width: 50%;
+            height: auto;
+        }
+        h2 {
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .seat-btn {
+            width: 80px;
+            height: 50px;
+            margin: 5px;
+            border: 1px solid #007bff;
+            background-color: #e7f1ff;
+            color: #007bff;
+            cursor: pointer;
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+        }
+        .seat-btn.selected {
+            background-color: red;
+            color: white;
+        }
+        .seat-btn.disabled {
+            background-color: #ffcccc;
+            color: #aaa;
+            cursor: not-allowed;
+        }
+        .seat-btn.reserved {
+            background-color: red;
+            color: white;
+            cursor: not-allowed;
+        }
+        .seat-grid {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #f1f1f1;
+        }
+        .reservation-list {
+            margin-top: 20px;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+        .download-icons {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .download-icon {
+            margin: 0 10px;
+            cursor: pointer;
+        }
+        .download-icon img {
+            width: 40px;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="logo">
+        <img src="file:///C:/Users/SCMX-TAYFUN/Desktop/LOGO%202.png" alt="Logo">
+    </div>
+    
+    <h2>Masa Rezervasyon Sistemi</h2>
+    <form id="reservationForm" method="POST" action="javascript:void(0);">
+        <div class="form-group">
+            <label for="table">Masa/Toplantı Odası Seçin</label>
+            <select id="table" name="table" onchange="updateSeatingPlan()" required>
+                <option value="Masa 1">Masa 1</option>
+                <option value="Masa 2">Masa 2</option>
+                <option value="Toplantı Odası">Toplantı Odası</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="name">Adı</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="surname">Soyadı</label>
+            <input type="text" id="surname" name="surname" required>
+        </div>
+        <div class="form-group">
+            <label for="startDate">Başlangıç Tarihi</label>
+            <input type="date" id="startDate" name="startDate" onchange="updateSeatingPlan()" required>
+        </div>
+        <div class="form-group">
+            <label for="endDate">Bitiş Tarihi</label>
+            <input type="date" id="endDate" name="endDate" onchange="updateSeatingPlan()" required>
+        </div>
+        <div class="form-group">
+            <label>Oturma Düzeni</label>
+            <div id="seatPlan" class="seat-grid"></div>
+            <input type="hidden" id="selectedSeat" name="selectedSeat">
+        </div>
+        <button type="submit" onclick="submitReservation()">Rezervasyon Yap</button>
+    </form>
+
+    <div class="reservation-list" id="reservationList">
+        <h3>Rezervasyon Kayıtları</h3>
+        <ul id="reservations"></ul>
+        <div class="download-icons">
+            <div class="download-icon" onclick="downloadAsTxt()">
+                <img src="https://img.icons8.com/material-outlined/50/000000/txt.png" alt="TXT İkonu">
+            </div>
+            <div class="download-icon" onclick="downloadAsPdf()">
+                <img src="https://img.icons8.com/material-outlined/50/000000/pdf.png" alt="PDF İkonu">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let reservations = JSON.parse(localStorage.getItem('reservations')) || [];
+    
+    // Masa 2 için Kilitli koltuk ayarları
+    const lockedSeats = {
+        "Masa 2": ["Koltuk 1"]
+    };
+
+    function updateSeatingPlan() {
+        const seatPlan = document.getElementById("seatPlan");
+        seatPlan.innerHTML = "";
+        const table = document.getElementById("table").value;
+
+        let seats = [];
+        if (table === "Masa 1") {
+            seats = ["Koltuk 1", "Koltuk 2"];
+        } else if (table === "Masa 2") {
+            seats = ["Koltuk 1", "Koltuk 2"];
+        } else if (table === "Toplantı Odası") {
+            seats = ["Koltuk 1", "Koltuk 2", "Koltuk 3", "Koltuk 4"];
+        }
+
+        const startDate = new Date(document.getElementById("startDate").value);
+        const endDate = new Date(document.getElementById("endDate").value);
+
+        const reservedSeats = reservations.filter(reservation => {
+            const resStartDate = new Date(reservation.startDate);
+            const resEndDate = new Date(reservation.endDate);
+            return (
+                reservation.table === table &&
+                ((startDate >= resStartDate && startDate <= resEndDate) ||
+                (endDate >= resStartDate && endDate <= resEndDate))
+            );
+        }).map(reservation => reservation.seat);
+
+        seats.forEach(seat => {
+            const button = document.createElement("button");
+            button.textContent = seat;
+
+            // Koltuk 1'in rezervasyonunu engelle
+            if (lockedSeats[table] && lockedSeats[table].includes(seat)) {
+                button.className = "seat-btn reserved"; // Kırmızı ve engellenmiş
+                button.onclick = () => alert("Bu koltuk rezerve edilmiştir.");
+            } else {
+                button.className = "seat-btn " + (reservedSeats.includes(seat) ? "reserved" : "");
+                button.onclick = () => {
+                    if (!reservedSeats.includes(seat)) {
+                        document.querySelectorAll(".seat-btn").forEach(btn => btn.classList.remove("selected"));
+                        button.classList.add("selected");
+                        document.getElementById("selectedSeat").value = seat;
+                    }
+                };
+            }
+
+            seatPlan.appendChild(button);
+        });
+    }
+
+    function submitReservation() {
+        const name = document.getElementById("name").value;
+        const surname = document.getElementById("surname").value;
+        const startDate = document.getElementById("startDate").value;
+        const endDate = document.getElementById("endDate").value;
+        const selectedSeat = document.getElementById("selectedSeat").value;
+        const table = document.getElementById("table").value;
+
+        // Eğer koltuk seçilmemişse hata göster
+        if (!selectedSeat) {
+            alert("Lütfen bir koltuk seçin.");
+            return;
+        }
+
+        const reservation = { name, surname, startDate, endDate, seat: selectedSeat, table };
+        reservations.push(reservation);
+        localStorage.setItem('reservations', JSON.stringify(reservations));
+        displayReservations();
+        document.getElementById("reservationForm").reset();
+        updateSeatingPlan();
+    }
+
+    function displayReservations() {
+        const reservationsList = document.getElementById("reservations");
+        reservationsList.innerHTML = "";
+        reservations.forEach((reservation, index) => {
+            const li = document.createElement("li");
+            li.textContent = `${index + 1}. ${reservation.name} ${reservation.surname} - ${reservation.startDate} - ${reservation.endDate} - ${reservation.seat}`;
+            reservationsList.appendChild(li);
+        });
+    }
+
+    // TXT olarak indirme fonksiyonu
+    function downloadAsTxt() {
+        const txtData = reservations.map(reservation => 
+            `${reservation.name} ${reservation.surname} - ${reservation.startDate} - ${reservation.endDate} - ${reservation.seat}`
+        ).join("\n");
+
+        const blob = new Blob([txtData], { type: "text/plain" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "reservations.txt";
+        link.click();
+    }
+
+    // PDF olarak indirme fonksiyonu
+    function downloadAsPdf() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        let pdfContent = "Rezervasyon Kayıtları:\n\n";
+
+        reservations.forEach(reservation => {
+            pdfContent += `${reservation.name} ${reservation.surname} - ${reservation.startDate} - ${reservation.endDate} - ${reservation.seat}\n`;
+        });
+
+        doc.text(pdfContent, 10, 10);
+        doc.save("reservations.pdf");
+    }
+
+    // Bitiş tarihi dolmuş rezervasyonları sil
+    function cleanUpReservations() {
+        const now = new Date();
+        reservations = reservations.filter(reservation => {
+            const endDate = new Date(reservation.endDate);
+            return endDate >= now;
+        });
+        localStorage.setItem('reservations', JSON.stringify(reservations));
+    }
+
+    cleanUpReservations();
+    updateSeatingPlan();
+    displayReservations();
+</script>
+
+</body>
+</html>
